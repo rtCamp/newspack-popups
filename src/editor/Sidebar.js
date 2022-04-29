@@ -35,6 +35,7 @@ import PositionPlacementControl from './PositionPlacementControl';
 const Sidebar = props => {
 	const {
 		display_title,
+		use_bento,
 		hide_border,
 		frequency,
 		onMetaFieldChange,
@@ -235,6 +236,11 @@ const Sidebar = props => {
 				label={ __( 'Display Prompt Title', 'newspack-popups' ) }
 				checked={ display_title }
 				onChange={ value => onMetaFieldChange( 'display_title', value ) }
+			/>
+			<ToggleControl
+				label={ __( 'Use Bento', 'newspack-popups' ) }
+				checked={ use_bento }
+				onChange={ value => onMetaFieldChange( 'use_bento', value ) }
 			/>
 			{ ( isInlinePlacement( placement ) ||
 				isManualOnlyPlacement( placement ) ||
