@@ -24,7 +24,7 @@ final class Newspack_Popups {
 	const PREVIEW_QUERY_KEYS = [
 		'background_color'               => 'n_bc',
 		'display_title'                  => 'n_ti',
-		'use_bento'                      => 'n_ub',
+		'use_conditional_block'          => 'n_cb',
 		'hide_border'                    => 'n_hb',
 		'undismissible_prompt'           => 'n_u',
 		'dismiss_text'                   => 'n_dt',
@@ -342,7 +342,7 @@ final class Newspack_Popups {
 
 		\register_meta(
 			'post',
-			'use_bento',
+			'use_conditional_block',
 			[
 				'object_subtype' => self::NEWSPACK_POPUPS_CPT,
 				'show_in_rest'   => true,
@@ -796,7 +796,7 @@ final class Newspack_Popups {
 
 		update_post_meta( $post_id, 'background_color', '#FFFFFF' );
 		update_post_meta( $post_id, 'display_title', false );
-		update_post_meta( $post_id, 'use_bento', false );
+		update_post_meta( $post_id, 'use_conditional_block', false );
 		update_post_meta( $post_id, 'hide_border', false );
 		update_post_meta( $post_id, 'dismiss_text', $dismiss_text );
 		update_post_meta( $post_id, 'frequency', $frequency );
