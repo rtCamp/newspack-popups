@@ -12,6 +12,12 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Newspack_Popups_Model {
 	/**
+	 * amp-conditional-block Experiment
+	 * 	Flag to indicate use of conditional-block.
+	 */
+	private static $use_conditional_block = true;
+
+	/**
 	 * Possible placements of overlay popups.
 	 *
 	 * @var array
@@ -1039,7 +1045,15 @@ final class Newspack_Popups_Model {
 		// The amp-access endpoint is queried only once (on page load), but after changing block settings,
 		// the block will be re-rendered. It has to be initially visible to be seen in the Customizer preview.
 		$is_hidden_initially = ! is_customize_preview();
-		return 'amp-access="popups.' . esc_attr( self::canonize_popup_id( $popup['id'] ) ) . '"' . ( $is_hidden_initially ? ' amp-access-hide ' : ' ' );
+		
+		/**
+		 * Use conditiona-block if `use_conditional_block` flag is set, else use 'amp-access'.
+		 */
+		if ( ! self::$use_conditional_block ) {
+			return 'amp-access="popups.' . esc_attr( self::canonize_popup_id( $popup['id'] ) ) . '"' . ( $is_hidden_initially ? ' amp-access-hide ' : ' ' );
+		} else {
+			return 'conditional-block="popups' . esc_attr( $popup['id'] ) . '"' . ' hidden ' ;
+		}
 	}
 
 	/**

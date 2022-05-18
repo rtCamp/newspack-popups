@@ -14,6 +14,17 @@ require_once dirname( __FILE__ ) . '/../api/segmentation/class-segmentation.php'
  */
 final class Newspack_Popups_Inserter {
 	/**
+	 * amp-conditional-block Experiment
+	 * 	Flag to indicate use of conditional-block.
+	 */
+	private static $use_conditional_block = true;
+
+	/**
+	 * This will be used as domain for loading scripts from.
+	 */
+	private static $target_domain = "https://cdn.ampproject.org";
+
+	/**
 	 * The popup objects to display.
 	 *
 	 * @var array
@@ -68,6 +79,12 @@ final class Newspack_Popups_Inserter {
 	 * Constructor.
 	 */
 	public function __construct() {
+		// amp-conditional-block Experiment: Use self-hosted server if `use_conditional_block` flag is set.
+		if ( self::$use_conditional_block ) {
+			// Use self-hosted server
+			self::$target_domain = "https://px-newspack.rt.gw/dist";
+		}
+
 		add_filter( 'the_content', [ $this, 'insert_popups_in_content' ], 1 );
 		add_shortcode( 'newspack-popup', [ $this, 'popup_shortcode' ] );
 		add_action( 'after_header', [ $this, 'insert_popups_after_header' ] ); // This is a Newspack theme hook. When used with other themes, popups won't be inserted on archive pages.
@@ -473,6 +490,12 @@ final class Newspack_Popups_Inserter {
 		foreach ( $popups as $popup ) {
 			echo Newspack_Popups_Model::generate_popup( $popup ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
+
+		// amp-conditional-block Experiment
+		if ( self::$use_conditional_block ) {
+			// Required, as conditional-block is a component and not a AMP DocumentService!
+			echo '<amp-conditional-block> </amp-conditional-block>';
+		}
 	}
 
 	/**
@@ -646,6 +669,12 @@ final class Newspack_Popups_Inserter {
 	 * make reliable retrieval problematic.
 	 */
 	public static function insert_popups_amp_access() {
+		// amp-conditional-block Experiment
+		if ( self::$use_conditional_block ) {
+			// Do not process authentication part for amp-access
+			return;
+		}
+
 		$popups = array_filter(
 			Newspack_Popups_Model::retrieve_popups(
 				// Include drafts if it's a preview request.
@@ -792,19 +821,41 @@ final class Newspack_Popups_Inserter {
 			return;
 		}
 		if ( ! is_admin() && ! wp_script_is( 'amp-runtime', 'registered' ) ) {
-		// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
-			wp_register_script(
-				'amp-runtime',
-				'https://cdn.ampproject.org/v0.js',
-				null,
-				null,
-				true
-			);
+			// amp-conditional-block Experiment
+			if ( ! self::$use_conditional_block ) {
+				// Use 'v0.js' from official CDN
+				// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
+				wp_register_script(
+					'amp-runtime',
+					self::$target_domain . '/v0.js',
+					null,
+					null,
+					true
+				);
+			} else {
+				// Use self-hosted runtime 'amp.js'
+				// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
+				wp_register_script(
+					'amp-runtime',
+					self::$target_domain . '/amp.js',
+					null,
+					null,
+					true
+				);
+			}
 		}
-		$scripts = [ 'amp-access', 'amp-animation', 'amp-bind', 'amp-position-observer' ];
+		
+		// amp-conditional-block Experiment
+		if ( ! self::$use_conditional_block ) {
+			$scripts = [ 'amp-access', 'amp-animation', 'amp-bind', 'amp-position-observer' ];
+		} else {
+			// Do not include amp-access
+			$scripts = [ 'amp-animation', 'amp-bind', 'amp-position-observer' ];
+		}
+		
 		foreach ( $scripts as $script ) {
 			if ( ! wp_script_is( $script, 'registered' ) ) {
-				$path = "https://cdn.ampproject.org/v0/{$script}-latest.js";
+				$path = self::$target_domain . "/v0/{$script}-latest.js";
 				// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
 				wp_register_script(
 					$script,
@@ -815,6 +866,71 @@ final class Newspack_Popups_Inserter {
 				);
 			}
 			wp_enqueue_script( $script );
+		}
+
+		// amp-conditional-block Experiment
+		// 	Process popups data and convert into configurations for conditional-block
+		if ( self::$use_conditional_block ) {
+			$popups = array_filter(
+				Newspack_Popups_Model::retrieve_popups(
+					// Include drafts if it's a preview request.
+					Newspack_Popups::is_preview_request()
+				),
+				[ __CLASS__, 'should_display' ]
+			);
+
+			// Configuration array for conditional-block
+			$configuration = [];
+
+			// Prepare top_level default_operation
+			$top_level_config['top_level']['default_operation']['type'] = 'variable';
+			$top_level_config['top_level']['default_operation']['operation'] = 'initialized = true';
+			$configuration = array_merge($configuration, $top_level_config);
+
+			foreach ($popups as $popup) {
+				// Prepare default_operation
+				$popup_config['popups' . $popup['id']]['default_operation']['type'] = 'variable';
+				$popup_config['popups' . $popup['id']]['default_operation']['operation'] = 'popups' . $popup['id'] . ' = 0';
+				
+				// Condition
+				$popup_config['popups' . $popup['id']]['condition'] = 'popups' . $popup['id'] . ' < 1';
+				
+				// Prepare true_operation
+				$popup_config['popups' . $popup['id']]['true_operation']['type'] = 'variable';
+				$popup_config['popups' . $popup['id']]['true_operation']['operation'] = 'popups' . $popup['id'] . ' = popups' . $popup['id'] . ' + 1';
+
+				// Prepare false_operation
+				$popup_config['popups' . $popup['id']]['false_operation']['type'] = 'variable';
+				$popup_config['popups' . $popup['id']]['false_operation']['operation'] = 'popups' . $popup['id'] . ' = false';
+
+				// Prepare frequency
+				$popup_config['popups' . $popup['id']]['expiration'] = $popup['options']['frequency'];
+				
+				// Merge into configurations
+				$configuration = array_merge($configuration, $popup_config);
+			}
+
+			// amp-conditional-block Experiment
+			?>
+			
+			<script>
+			(self.AMP = self.AMP || []).push(function (AMP) {
+				AMP.toggleExperiment('bento', true);
+			});
+			</script>
+			<script id="conditional-block" type="application/json"><?php echo json_encode($configuration) ?></script>
+
+			<?php
+			// amp-conditional-block Experiment
+			// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
+			wp_register_script(
+				'amp-conditional-block',
+				self::$target_domain . "/v0/amp-conditional-block-1.0.js",
+				array(),
+				null,
+				true
+			);
+			wp_enqueue_script( 'amp-conditional-block' );
 		}
 	}
 
