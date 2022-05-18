@@ -88,6 +88,7 @@ final class Newspack_Popups_Inserter {
 		add_filter( 'the_content', [ $this, 'insert_popups_in_content' ], 1 );
 		add_shortcode( 'newspack-popup', [ $this, 'popup_shortcode' ] );
 		add_action( 'after_header', [ $this, 'insert_popups_after_header' ] ); // This is a Newspack theme hook. When used with other themes, popups won't be inserted on archive pages.
+		add_action( 'after_header', [ $this, 'insert_conditional_block' ] );
 		add_action( 'wp_head', [ $this, 'insert_popups_amp_access' ] );
 		add_action( 'wp_head', [ $this, 'register_amp_scripts' ] );
 		add_action( 'before_header', [ $this, 'insert_before_header' ] );
@@ -490,7 +491,12 @@ final class Newspack_Popups_Inserter {
 		foreach ( $popups as $popup ) {
 			echo Newspack_Popups_Model::generate_popup( $popup ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
+	}
 
+	/**
+	 * Insert overlay prompts into archive pages if needed. Applies to Newspack Theme only.
+	 */
+	public static function insert_conditional_block() {
 		// amp-conditional-block Experiment
 		if ( self::$use_conditional_block ) {
 			// Required, as conditional-block is a component and not a AMP DocumentService!
