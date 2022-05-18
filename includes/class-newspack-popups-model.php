@@ -224,7 +224,6 @@ final class Newspack_Popups_Model {
 			[
 				'background_color'               => filter_input( INPUT_GET, 'n_bc', FILTER_SANITIZE_STRING ),
 				'display_title'                  => filter_input( INPUT_GET, 'n_ti', FILTER_VALIDATE_BOOLEAN ),
-				'use_conditional_block'          => filter_input( INPUT_GET, 'n_cb', FILTER_VALIDATE_BOOLEAN ),
 				'hide_border'                    => filter_input( INPUT_GET, 'n_hb', FILTER_VALIDATE_BOOLEAN ),
 				'undismissible_prompt'           => filter_input( INPUT_GET, 'n_u', FILTER_VALIDATE_BOOLEAN ),
 				'dismiss_text'                   => filter_input( INPUT_GET, 'n_dt', FILTER_SANITIZE_STRING ),
@@ -351,7 +350,6 @@ final class Newspack_Popups_Model {
 			'dismiss_text'                   => get_post_meta( $id, 'dismiss_text', true ),
 			'dismiss_text_alignment'         => get_post_meta( $id, 'dismiss_text_alignment', true ),
 			'display_title'                  => get_post_meta( $id, 'display_title', true ),
-			'use_conditional_block'          => get_post_meta( $id, 'use_conditional_block', true ),
 			'hide_border'                    => get_post_meta( $id, 'hide_border', true ),
 			'frequency'                      => get_post_meta( $id, 'frequency', true ),
 			'overlay_color'                  => get_post_meta( $id, 'overlay_color', true ),
@@ -390,7 +388,6 @@ final class Newspack_Popups_Model {
 			[
 				'background_color'               => '#FFFFFF',
 				'display_title'                  => false,
-				'use_conditional_block'          => false,
 				'hide_border'                    => false,
 				'undismissible_prompt'           => false,
 				'dismiss_text'                   => '',
@@ -1111,7 +1108,6 @@ final class Newspack_Popups_Model {
 		$element_id             = self::get_uniqid();
 		$endpoint               = self::get_reader_endpoint();
 		$display_title          = $popup['options']['display_title'];
-		$use_conditional_block  = $popup['options']['use_conditional_block'];
 		$hide_border            = $popup['options']['hide_border'];
 		$hidden_fields          = self::get_hidden_fields( $popup );
 		$dismiss_text           = $popup['options']['dismiss_text'];
@@ -1193,7 +1189,6 @@ final class Newspack_Popups_Model {
 		$dismiss_text           = $popup['options']['dismiss_text'];
 		$dismiss_text_alignment = $popup['options']['dismiss_text_alignment'];
 		$display_title          = $popup['options']['display_title'];
-		$use_conditional_block  = $popup['options']['use_conditional_block'];
 		$hide_border            = $popup['options']['hide_border'];
 		$overlay_opacity        = absint( $popup['options']['overlay_opacity'] ) / 100;
 		$overlay_color          = $popup['options']['overlay_color'];
